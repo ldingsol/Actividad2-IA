@@ -1,0 +1,42 @@
+# ==================================
+# IGNORAR ARCHIVOS DE PYTHON / FLASK
+# ==================================
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# PyInstaller / Ejecutables
+build/
+dist/
+*.spec
+
+# ==================================
+# IGNORAR ARCHIVOS DE VUE / NODE.JS
+# ==================================
+/frontend/node_modules
+/frontend/dist   # Carpeta de compilación de producción de Vite
+/frontend/npm-debug.log
+/frontend/yarn-error.log
+
+# ==================================
+# IGNORAR ARCHIVOS DE LA BASE DE DATOS
+# ==================================
+*.db
+*.sqlite
+*.sqlite3
+postgres.conf
+pg_hba.conf
+
+# Archivos de configuración locales / Secretos
+*.env
+.env.local
+.env.development.local
+.vscode/
+
+# IDE files
+.idea/
