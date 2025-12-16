@@ -8,13 +8,61 @@ let residentId; // Almacenará el ID generado por el sistema
 let paymentReference; // Almacenará la referencia generada por el residente
 
 // URL base de la aplicación Vue
+
 const BASE_URL = 'http://localhost:5173';
 // URL base de la API Flask (asumiendo que corre en el puerto 5001)
 const API_BASE_URL = 'http://localhost:5001/api/v1'; 
 
 test.describe('Flujo de Pago Aislado: Registro, Cuota API y Pago', () => {
 
+    test('1. Registro de Nuevo Residente y Generación de Cuota Vía API', async ({ page }) => {
+        
+        // --- A. REGISTRO DE RESIDENTE (VÍA GUI) ---
+        await test.step('A. Registrar un nuevo residente de prueba', async () => {
+            await page.goto(`${BASE_URL}/admin/register`);
 
+            // Rellenar formulario con datos únicos
+            await page.fill('input#nombre_completo', `Residente ${UNIQUE_ID}`);
+            await page.fill('input#cedula', UNIQUE_ID);
+            await page.fill('input#telefono', '5551234');
+            await page.fill('input#email', `test.${UNIQUE_ID}@mail.com`);
+            await page.fill('input#num_llave', UNIQUE_ID.slice(-4)); // Usamos los últimos 4 dígitos
+
+            await page.click('button.submit-button');
+
+            // Esperar mensaje de éxito y extraer el ID
+            const successMessage = await page.textContent('.success-message-box');
+            expect(successMessage).toContain('registrados con éxito');
+            
+            // Extraer el ID asignado por el Backend/DB
+            const idText = await page.textContent('.assigned-id');
+            residentId = idText.match(/#(\d+)/)[1];
+            expect(residentId).toBeDefined();
+            console.log(`✅ Residente registrado con ID: ${residentId}`);
+        });
+
+        // --- B. GENERACIÓN DE CUOTA (VÍA API DIRECTA) ---
+        await test.step('B. Generar una cuota de $60.00 usando el endpoint de la API', async () => {
+            
+            // Usamos el APIRequestContext de Playwright para saltarnos el Frontend
+            const api = page.request;
+
+            const response = await api.post(`${API_BASE_URL}/admin/generate-monthly-dues`, {
+                data: {
+                    monto: TEST_AMOUNT,
+                    descripcion: `Cuota Única de Test ${UNIQUE_ID}`,
+                },
+            });
+
+            // Verificar que la API respondió con éxito
+            expect(response.ok()).toBeTruthy();
+            const jsonResponse = await response.json();
+            
+            // En lugar de verificar muchas cuotas, verificamos que el proceso fue exitoso
+            expect(jsonResponse.message).toContain('Cuotas mensuales generadas con éxito.');
+            console.log(`✅ Cuota generada VÍA API. Total Cuotas Creadas: ${jsonResponse.total_cuotas_creadas}`);
+        });
+    });
 
     test('2. Flujo de Pago: Generar Referencia y Procesar en Caja', async ({ page }) => {
         // Asegurarse de que el ID se haya obtenido en el paso anterior
